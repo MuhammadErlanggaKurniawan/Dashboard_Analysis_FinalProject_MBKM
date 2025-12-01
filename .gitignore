@@ -1,0 +1,15 @@
+# python cache
+__pycache__/
+*.pyc
+
+# environment
+.env
+venv/
+env/
+
+# system files
+.DS_Store
+
+# large datasets you DON'T want in repo
+data/*.xlsx
+data/*.xls

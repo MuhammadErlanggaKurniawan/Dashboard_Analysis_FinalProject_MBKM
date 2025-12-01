@@ -1,0 +1,53 @@
+/* assets/style.css */
+
+body {
+  background-color: #f5f7fb;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.main-container {
+  margin-top: 1rem;
+  margin-bottom: 2rem;
+}
+
+/* Header section */
+.header-section h1 {
+  font-weight: 700;
+}
+
+.header-section p {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Cards */
+.card {
+  border-radius: 0.75rem;
+  border: 1px solid #e1e4f0;
+}
+
+/* Tabs */
+#main-tabs .tab {
+  font-weight: 500;
+}
+
+/* DataTable tweak */
+.dash-table-container .dash-spreadsheet-container {
+  border-radius: 0.5rem;
+}
+
+/* KPI cards text center */
+.card .card-title {
+  font-size: 1.4rem;
+}
+
+/* Small text under interpretation */
+#correlation-interpretation {
+  font-size: 0.85rem;
+}
+
+/* Remove weird outline focus */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}

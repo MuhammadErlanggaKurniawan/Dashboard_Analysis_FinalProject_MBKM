@@ -1,0 +1,8 @@
+dash
+pandas
+numpy
+plotly
+scipy
+statsmodels
+scikit-learn
+pmdarima
