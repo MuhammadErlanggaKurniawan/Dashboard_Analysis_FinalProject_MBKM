@@ -62,6 +62,7 @@ def create_cooperatives_layout():
                 "📈 Ringkasan Lintas Periode – Kesenjangan Kota vs Kabupaten (2019–2025)",
                 className="mt-4 mb-3",
             ),
+            # Baris atas: dropdown pilih variabel
             html.Div(
                 [
                     html.Div(
@@ -74,8 +75,11 @@ def create_cooperatives_layout():
                                         "label": VAR_LABELS.get(v, v),
                                         "value": v,
                                     }
-                                    for v in (_mw_trend_df["variabel"].unique().tolist()
-                                              if not _mw_trend_df.empty else [])
+                                    for v in (
+                                        _mw_trend_df["variabel"].unique().tolist()
+                                        if not _mw_trend_df.empty
+                                        else []
+                                    )
                                 ],
                                 value=(
                                     _mw_trend_df["variabel"].unique()[0]
@@ -91,6 +95,7 @@ def create_cooperatives_layout():
                 ],
                 className="row",
             ),
+            # Baris bawah: grafik kiri, card besar kanan
             html.Div(
                 [
                     html.Div(
@@ -104,24 +109,33 @@ def create_cooperatives_layout():
                     ),
                     html.Div(
                         [
-                            html.H5("Ringkasan Singkat", className="mb-2"),
                             html.Div(
-                                id="coop-trend-summary-text",
-                                className="small",
-                            ),
-                            html.Hr(),
-                            html.P(
-                                "r di sini adalah ukuran efek (effect size) dari uji Mann–Whitney "
-                                "untuk membandingkan Kota vs Kabupaten. Semakin besar |r|, "
-                                "semakin kuat perbedaan distribusi antara keduanya.",
-                                className="text-muted",
-                                style={"fontSize": "0.85rem"},
-                            ),
-                            html.P(
-                                "Rule of thumb: |r| < 0.10 sangat kecil, 0.10–0.30 kecil, "
-                                "0.30–0.50 sedang, > 0.50 besar.",
-                                className="text-muted",
-                                style={"fontSize": "0.85rem"},
+                                [
+                                    html.H5(
+                                        "📝 Kesimpulan & Analisis Kebijakan",
+                                        className="mb-2",
+                                    ),
+                                    html.Div(
+                                        id="coop-trend-summary-text",
+                                        className="small",
+                                    ),
+                                    html.Hr(),
+                                    html.P(
+                                        "r di sini adalah ukuran efek (effect size) dari uji Mann–Whitney "
+                                        "untuk membandingkan Kota vs Kabupaten. Semakin besar |r|, "
+                                        "semakin kuat perbedaan distribusi antara keduanya.",
+                                        className="text-muted",
+                                        style={"fontSize": "0.85rem"},
+                                    ),
+                                    html.P(
+                                        "Rule of thumb: |r| < 0.10 sangat kecil, 0.10–0.30 kecil, "
+                                        "0.30–0.50 sedang, > 0.50 besar.",
+                                        className="text-muted",
+                                        style={"fontSize": "0.85rem"},
+                                    ),
+                                ],
+                                className="card p-3 shadow-sm position-sticky",
+                                style={"top": "80px", "maxHeight": "420px", "overflowY": "auto"},
                             ),
                         ],
                         className="col-md-4",
@@ -554,7 +568,8 @@ def update_coop_trend_graph(var_name):
     for thr, label in [(0.1, "kecil"), (0.3, "sedang"), (0.5, "besar")]:
         fig.add_hline(
             y=thr,
-            line=dict(color="lightgray", dash="dot", width=1),
+            line_dash="dot",
+            line_color="lightgray",
             annotation_text=label,
             annotation_position="right",
         )
@@ -584,43 +599,106 @@ def update_coop_trend_summary(var_name):
     if df.empty:
         return "Data tren tidak tersedia."
 
+    var_label = VAR_LABELS.get(var_name, var_name)
+
+    # statistik dasar
+    r_vals = df["r_abs"].dropna()
+    if r_vals.empty:
+        return "Effect size r tidak tersedia."
+
     first = df.iloc[0]
     last = df.iloc[-1]
 
-    var_label = VAR_LABELS.get(var_name, var_name)
-
-    r0 = first["r_abs"]
-    rT = last["r_abs"]
+    r0 = float(first["r_abs"])
+    rT = float(last["r_abs"])
     k0 = first["kategori_r"]
     kT = last["kategori_r"]
 
-    signif0 = first["signif"].lower()
-    signifT = last["signif"].lower()
+    periode_awal = str(first["periode"])
+    periode_akhir = str(last["periode"])
 
-    return [
-        html.P(
-            [
-                html.B(var_label),
-                " dipantau dari ",
-                html.B(str(first["periode"])),
-                " hingga ",
-                html.B(str(last["periode"])),
-                ".",
-            ]
-        ),
-        html.Ul(
-            [
-                html.Li(
-                    f"Awal periode: |r| ≈ {r0:.3f} ({k0}) pada {first['periode']} "
-                    f"({signif0})."
-                ),
-                html.Li(
-                    f"Akhir periode: |r| ≈ {rT:.3f} ({kT}) pada {last['periode']} "
-                    f"({signifT})."
-                ),
-            ]
-        ),
-    ]
+    n_total = len(df)
+    n_signif = int((df["signif"] == "SIGNIFIKAN").sum())
+    r_min = float(r_vals.min())
+    r_max = float(r_vals.max())
+    r_mean = float(r_vals.mean())
+
+    # arah tren kasar
+    delta = rT - r0
+    if delta > 0.05:
+        arah_tren = "cenderung menguat"
+    elif delta < -0.05:
+        arah_tren = "cenderung melemah"
+    else:
+        arah_tren = "relatif stabil"
+
+    # narasi kebijakan simple per variabel
+    if var_name == "jumlah_koperasi_aktif":
+        policy_points = [
+            "Kabupaten secara konsisten memiliki jumlah koperasi aktif yang lebih kuat dibanding Kota.",
+            "Wilayah Kota butuh dorongan pembentukan dan penguatan koperasi baru (insentif, pendampingan, integrasi dengan UMKM).",
+            "Di Kabupaten fokus diarahkan ke peningkatan kualitas dan produktivitas koperasi yang sudah banyak berdiri.",
+        ]
+    elif var_name == "usaha_mikro":
+        policy_points = [
+            "Fluktuasi kekuatan efek menunjukkan dinamika yang cukup besar pada basis koperasi usaha mikro.",
+            "Periode dengan |r| besar bisa dibaca sebagai momentum keberhasilan program tertentu yang layak direplikasi.",
+            "Penguatan pendampingan manajemen, akses pembiayaan, dan digitalisasi layanan koperasi mikro menjadi prioritas khususnya di Kabupaten.",
+        ]
+    elif var_name == "total_penduduk":
+        policy_points = [
+            "Kesenjangan kepadatan penduduk mempengaruhi kebutuhan dan tekanan terhadap layanan koperasi.",
+            "Wilayah berpenduduk besar perlu kapasitas koperasi yang cukup untuk menyerap aktivitas ekonomi lokal.",
+            "Kebijakan bisa memprioritaskan pengembangan koperasi di daerah padat penduduk dan penguatan pasar lokal di daerah dengan penduduk lebih sedikit.",
+        ]
+    elif var_name == "jumlah_karyawan":
+        policy_points = [
+            "Effect size yang relatif kecil menandakan kesenjangan jumlah karyawan koperasi antar wilayah tidak terlalu ekstrem.",
+            "Fokus kebijakan dapat bergeser dari penambahan kuantitas tenaga kerja ke peningkatan kualitas SDM koperasi.",
+            "Program pelatihan manajemen, keuangan, dan layanan anggota menjadi lebih relevan dibanding sekadar ekspansi jumlah karyawan.",
+        ]
+    else:
+        policy_points = [
+            "Variabel ini menunjukkan pola kesenjangan yang bisa menjadi dasar penentuan prioritas kebijakan.",
+            "Periode dengan perubahan |r| paling tajam layak dijadikan bahan evaluasi program dan intervensi.",
+        ]
+
+    return html.Div(
+        [
+            html.P(
+                [
+                    html.B(var_label),
+                    " dipantau dari ",
+                    html.B(periode_awal),
+                    " hingga ",
+                    html.B(periode_akhir),
+                    ".",
+                ]
+            ),
+            html.Ul(
+                [
+                    html.Li(
+                        f"Awal periode: |r| ≈ {r0:.3f} ({k0}) pada {periode_awal} "
+                        f"– status uji {first['signif'].lower()}."
+                    ),
+                    html.Li(
+                        f"Akhir periode: |r| ≈ {rT:.3f} ({kT}) pada {periode_akhir} "
+                        f"– status uji {last['signif'].lower()}."
+                    ),
+                    html.Li(
+                        f"Rentang keseluruhan: min |r| = {r_min:.3f}, "
+                        f"max |r| = {r_max:.3f}, rata-rata ≈ {r_mean:.3f}."
+                    ),
+                    html.Li(
+                        f"Periode dengan perbedaan signifikan: {n_signif} dari {n_total} periode (p < 0.05)."
+                    ),
+                    html.Li(f"Arah tren keseluruhan: {arah_tren}."),
+                ]
+            ),
+            html.H6("Implikasi Kebijakan:", className="mt-2"),
+            html.Ul([html.Li(p) for p in policy_points]),
+        ]
+    )
 
 
 # =========================================================
