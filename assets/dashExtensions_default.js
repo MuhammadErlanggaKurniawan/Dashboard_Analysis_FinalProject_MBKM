@@ -27,7 +27,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
         function2: function(feature, layer, context) {
             const kabkot = feature.properties.kabkot;
             const label = feature.properties.cluster_label;
-            layer.bindTooltip(kabkot + ' â€“ ' + label, {
+            layer.bindTooltip(kabkot + ' – ' + label, {
                 sticky: true
             });
         }

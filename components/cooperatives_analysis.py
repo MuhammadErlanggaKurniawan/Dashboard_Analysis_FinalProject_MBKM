@@ -1,7 +1,7 @@
 # components/cooperatives_analysis.py
 
-import dash
-from dash import dcc, html, Input, Output, callback, dash_table
+import dash # type: ignore
+from dash import dcc, html, Input, Output, callback, dash_table # type: ignore
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
@@ -371,12 +371,58 @@ def create_cooperatives_layout():
                             ),
                             html.Div(
                                 [
+                                    html.H4("⭐ Highlight Periode Ini", className="card-title"),
+                                    html.Div(id="period-highlights", className="small"),
+                                ],
+                                className="card p-3 mb-3 shadow-sm",
+                            ),
+                            html.Div(
+                                [
+                                    html.H4(
+                                        "📈 Tren Singkat Variabel Utama", className="card-title"
+                                    ),
+                                    dcc.Graph(
+                                        id="mini-trend-main-var",
+                                        style={"height": "190px"},
+                                        config={"displayModeBar": False},
+                                    ),
+                                ],
+                                className="card p-3 mb-3 shadow-sm",
+                            ),
+                            html.Div(
+                                [
+                                    html.H4(
+                                        "📊 Komposisi Jenis Usaha", className="card-title"
+                                    ),
+                                    dcc.Graph(
+                                        id="mini-jenis-usaha",
+                                        style={"height": "220px"},
+                                        config={"displayModeBar": False},
+                                    ),
+                                ],
+                                className="card p-3 mb-3 shadow-sm",
+                            ),
+                            html.Div(
+                                [
                                     html.H4(
                                         "🏆 Top 5 Wilayah", className="card-title"
                                     ),
                                     html.Div(
                                         id="top-regions-table",
                                         className="regions-table",
+                                    ),
+                                ],
+                                className="card p-3 mb-3 shadow-sm",
+                            ),
+                            html.Div(
+                                [
+                                    html.H4(
+                                        "🧭 Kesimpulan & Analisis Kebijakan",
+                                        className="card-title",
+                                    ),
+                                    html.Div(
+                                        id="policy-summary",
+                                        className="small",
                                     ),
                                 ],
                                 className="card p-3 mb-3 shadow-sm",
@@ -431,6 +477,10 @@ def create_cooperatives_layout():
         Output("correlation-interpretation", "children"),
         Output("correlation-scatter", "figure"),
         Output("shapiro-table", "children"),
+        Output("policy-summary", "children"),
+        Output("period-highlights", "children"),
+        Output("mini-trend-main-var", "figure"),
+        Output("mini-jenis-usaha", "figure"),
     ],
     [
         Input("variable-selector", "value"),
@@ -441,6 +491,7 @@ def create_cooperatives_layout():
         Input("periode-selector", "value"),
     ],
 )
+
 def update_analysis(
     selected_variable,
     region_type,
@@ -477,17 +528,22 @@ def update_analysis(
         msg = "Data kosong untuk periode / filter yang dipilih."
 
         return (
-            empty_fig,
-            empty_fig,
-            html.Div(msg),
-            html.Div(msg),
-            empty_fig,
-            [],
-            html.Div(msg),
-            msg,
-            empty_fig,
-            html.Div(msg),
+            empty_fig,          # correlation-heatmap
+            empty_fig,          # distribution-boxplot
+            html.Div(msg),      # statistical-results
+            html.Div(msg),      # top-regions-table
+            empty_fig,          # regional-analysis
+            [],                 # insights-cards
+            html.Div(msg),      # dataset-info
+            msg,                # correlation-interpretation
+            empty_fig,          # correlation-scatter
+            html.Div(msg),      # shapiro-table
+            html.Div(msg),      # policy-summary
+            html.Div(msg),      # period-highlights
+            empty_fig,          # mini-trend-main-var
+            empty_fig,          # mini-jenis-usaha
         )
+
 
     # === 2. Shapiro–Wilk table (per variabel numerik) ===
     shapiro_table = create_shapiro_table(df_processed)
@@ -511,19 +567,43 @@ def update_analysis(
     dataset_info = create_dataset_info(df_processed)
 
     corr_interpretation = strongest_text  # teks di bawah heatmap
+    policy_summary = create_policy_summary(
+        df_processed,
+        selected_periode,
+        region_type,
+        selected_variable,
+    )
+    period_highlights = create_period_highlights(
+        df_processed,
+        selected_periode,
+        region_type,
+    )
+
+    mini_trend_fig = create_mini_trend_main_var(
+        _df_processed_global,
+        selected_variable,
+        region_type,
+    )
+
+    mini_jenis_usaha_fig = create_mini_jenis_usaha_figure(df_processed)
 
     return (
-        heatmap_fig,
-        box_fig,
-        stats_results,
-        top_regions_table,
-        regional_fig,
-        insights_cards,
-        dataset_info,
-        corr_interpretation,
-        scatter_fig,
-        shapiro_table,
+        heatmap_fig,          # correlation-heatmap
+        box_fig,              # distribution-boxplot
+        stats_results,        # statistical-results
+        top_regions_table,    # top-regions-table
+        regional_fig,         # regional-analysis
+        insights_cards,       # insights-cards
+        dataset_info,         # dataset-info
+        corr_interpretation,  # correlation-interpretation
+        scatter_fig,          # correlation-scatter
+        shapiro_table,        # shapiro-table
+        policy_summary,       # policy-summary
+        period_highlights,    # period-highlights
+        mini_trend_fig,       # mini-trend-main-var
+        mini_jenis_usaha_fig, # mini-jenis-usaha
     )
+
 
 
 # =========================================================
@@ -1158,3 +1238,199 @@ def create_dataset_info(df):
             ),
         ]
     )
+def create_policy_summary(df, selected_periode, region_type, selected_variable):
+    """
+    Narasi kesimpulan & analisis kebijakan untuk periode + filter saat ini.
+    Menggabungkan: normalitas, korelasi Spearman, Mann–Whitney, dan top wilayah.
+    """
+    if df.empty:
+        return html.Div(
+            "Data kosong untuk kombinasi periode dan filter wilayah yang dipilih.",
+            className="text-muted",
+        )
+
+    # --- 1. Info konteks dasar ---
+    periode_text = (
+        f"periode {selected_periode}"
+        if selected_periode is not None
+        else "seluruh periode yang dianalisis"
+    )
+
+    if region_type == "Kota":
+        region_label = "kota di Jawa Timur"
+    elif region_type == "Kabupaten":
+        region_label = "kabupaten di Jawa Timur"
+    else:
+        region_label = "seluruh kabupaten/kota di Jawa Timur"
+
+    n_obs = len(df)
+
+    # --- 2. Ringkasan normalitas (Shapiro–Wilk) ---
+    normal_count = 0
+    nonnormal_count = 0
+    for col in NUMERIC_COLS:
+        if col not in df.columns:
+            continue
+        vals = df[col].dropna()
+        if len(vals) < 3:
+            continue
+        stat, p_val = stats.shapiro(vals)
+        if p_val < 0.05:
+            nonnormal_count += 1
+        else:
+            normal_count += 1
+
+    # --- 3. Korelasi Spearman terkuat ---
+    try:
+        corr_matrix, p_values = calculate_spearman_correlations(df)
+    except Exception:
+        corr_matrix, p_values = pd.DataFrame(), pd.DataFrame()
+
+    strongest_pair = None
+    if not corr_matrix.empty:
+        cols = corr_matrix.columns.tolist()
+        max_abs = 0
+        for i in range(len(cols)):
+            for j in range(i + 1, len(cols)):
+                val = corr_matrix.iloc[i, j]
+                if pd.notna(val) and abs(val) > max_abs:
+                    max_abs = abs(val)
+                    strongest_pair = (cols[i], cols[j], val)
+                    max_abs = abs(val)
+
+    # --- 4. Hasil Mann–Whitney (kalau memungkinkan) ---
+    mw_result = None
+    if region_type == "all":
+        try:
+            mw_result = perform_mannwhitney_test(df, selected_variable)
+        except Exception:
+            mw_result = None
+
+    # --- 5. Top wilayah untuk variabel utama ---
+    try:
+        top_regions = get_top_regions(df, selected_variable, 5)
+    except Exception:
+        top_regions = pd.DataFrame()
+
+    top_text = None
+    if not top_regions.empty and "kabupaten_kota" in top_regions.columns:
+        first_row = top_regions.iloc[0]
+        last_row = top_regions.iloc[-1]
+        top_text = (
+            f"Nilai tertinggi {selected_variable} terdapat di "
+            f"{first_row['kabupaten_kota']}."
+        )
+        if len(top_regions) > 1:
+            top_text += (
+                f" Sementara nilai terendah di antara 5 besar berada di "
+                f"{last_row['kabupaten_kota']}."
+            )
+
+    # ------------------ SUSUN NARASI ------------------ #
+    bullets_rangkuman = []
+
+    bullets_rangkuman.append(
+        f"Analisis ini didasarkan pada {n_obs} observasi untuk {region_label} "
+        f"pada {periode_text}."
+    )
+
+    if normal_count + nonnormal_count > 0:
+        bullets_rangkuman.append(
+            f"Sebagian besar variabel numerik menunjukkan distribusi "
+            f"{'non-normal' if nonnormal_count >= normal_count else 'campuran normal dan non-normal'} "
+            f"(≈ {nonnormal_count} variabel non-normal, {normal_count} variabel mendekati normal), "
+            f"sehingga pendekatan nonparametrik seperti Spearman dan Mann–Whitney tepat digunakan."
+        )
+
+    if strongest_pair is not None:
+        v1, v2, rho = strongest_pair
+        abs_rho = abs(rho)
+        if abs_rho < 0.10:
+            strength = "sangat lemah"
+        elif abs_rho < 0.30:
+            strength = "lemah"
+        elif abs_rho < 0.50:
+            strength = "sedang"
+        elif abs_rho < 0.70:
+            strength = "kuat"
+        else:
+            strength = "sangat kuat"
+
+        arah = "positif" if rho > 0 else "negatif"
+        bullets_rangkuman.append(
+            f"Korelasi rank terkuat muncul antara {v1} dan {v2} "
+            f"dengan ρ ≈ {rho:.3f} ({strength}, {arah}). "
+            f"Ini menggambarkan pola keterkaitan, bukan hubungan sebab-akibat langsung."
+        )
+
+    if mw_result is not None:
+        bullets_rangkuman.append(
+            f"Untuk variabel utama '{selected_variable}', uji Mann–Whitney "
+            f"antara kota dan kabupaten menghasilkan p ≈ {mw_result['p_value']:.4f} "
+            f"dengan ukuran efek (CLES) ≈ {mw_result['effect_size']:.3f}. "
+            f"Median kota ≈ {mw_result['kota_median']:.1f}, sedangkan median kabupaten "
+            f"≈ {mw_result['kabupaten_median']:.1f}."
+        )
+
+    if top_text is not None:
+        bullets_rangkuman.append(top_text)
+
+    # --- Implikasi kebijakan (high-level) ---
+    policy_points = []
+
+    # poin generik berbasis korelasi
+    if strongest_pair is not None:
+        v1, v2, rho = strongest_pair
+        if abs(rho) >= 0.3:
+            policy_points.append(
+                f"Pasangan variabel {v1}–{v2} dapat dijadikan fokus monitoring bersama: "
+                f"perubahan pada salah satu indikator berpotensi diikuti perubahan pola pada indikator lain."
+            )
+
+    # poin berbasis Mann–Whitney
+    if mw_result is not None and mw_result["p_value"] < 0.05:
+        if mw_result["kabupaten_median"] > mw_result["kota_median"]:
+            arah_kesenjangan = "kabupaten cenderung berada di atas kota"
+        else:
+            arah_kesenjangan = "kota cenderung berada di atas kabupaten"
+
+        policy_points.append(
+            f"Kesenjangan {selected_variable} antara kota dan kabupaten signifikan; "
+            f"{arah_kesenjangan} untuk indikator ini. Program penguatan bisa diprioritaskan "
+            f"di kelompok wilayah yang tertinggal (median lebih rendah)."
+        )
+
+    # poin berbasis konsentrasi wilayah
+    if top_text is not None:
+        policy_points.append(
+            "Wilayah dengan nilai tertinggi dapat dijadikan rujukan praktik baik, "
+            "sementara wilayah di bawah rata-rata perlu pendampingan lebih intensif."
+        )
+
+    if not policy_points:
+        policy_points.append(
+            "Temuan saat ini lebih bersifat deskriptif; perlu analisis lanjutan "
+            "dan triangulasi dengan informasi kualitatif sebelum dijadikan dasar kebijakan spesifik."
+        )
+
+    return html.Div(
+        [
+            html.P("Ringkasan utama:", className="fw-bold mb-1"),
+            html.Ul(
+                [html.Li(p, className="mb-1") for p in bullets_rangkuman],
+                className="mb-2",
+            ),
+            html.P("Implikasi kebijakan (awal):", className="fw-bold mb-1"),
+            html.Ul(
+                [html.Li(p, className="mb-1") for p in policy_points],
+                className="mb-0",
+            ),
+            html.P(
+                "Catatan: interpretasi ini berbasis korelasi dan perbandingan distribusi, "
+                "bukan bukti kausal.",
+                className="mt-2 text-muted",
+                style={"fontSize": "0.8rem"},
+            ),
+        ]
+    )
+    

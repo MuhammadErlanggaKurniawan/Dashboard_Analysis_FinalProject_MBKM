@@ -1,8 +1,8 @@
 # app.py
-import dash
-from dash import dcc, html, Input, Output, callback
-import dash_bootstrap_components as dbc
-import dash_leaflet  # Import ini diperlukan meskipun tidak langsung dipakai
+import dash # type: ignore
+from dash import dcc, html, Input, Output, callback # type: ignore
+import dash_bootstrap_components as dbc # type: ignore
+import dash_leaflet   # type: ignore
 
 from components.navbar import create_navbar
 from components.time_series import create_tsa_tab

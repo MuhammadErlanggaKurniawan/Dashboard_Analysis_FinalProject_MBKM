@@ -6,3 +6,6 @@ scipy
 statsmodels
 scikit-learn
 pmdarima
+dash_leaflet
+shapely
+dash_extensions
