@@ -1,7 +1,7 @@
 # utils/pattern_data.py
 import pandas as pd
 from typing import List, Tuple
-from shapely import wkt  # Pastikan ini ada
+from shapely import wkt  # type: ignore
 # ============================
 # Konstanta
 # ============================

@@ -1,7 +1,7 @@
 # components/time_series.py
 
-from dash import dcc, html, Input, Output, callback
-import dash_bootstrap_components as dbc
+from dash import dcc, html, Input, Output, callback  # type: ignore
+import dash_bootstrap_components as dbc # type: ignore
 import plotly.graph_objects as go
 import pandas as pd
 from datetime import datetime
@@ -69,21 +69,24 @@ def create_tsa_tab():
             # 3. INTERPRETATION
             dbc.Alert(
                 [
-                    html.H5("📊 Interpretasi Trend Penumpang Bus:"),
+                    html.H5(
+                        "📊 Interpretasi Trend Penumpang Bus:",
+                        className="tsa-title",
+                    ),
                     html.Ul(
                         [
                             html.Li("🚀 Puncak 2.5 juta penumpang (Des 2019)"),
                             html.Li("💥 Dampak COVID: Turun 98% (Mei 2020)"),
-                            html.Li("📈 Pemulihan bertahap 2021-2023"),
-                            html.Li(
-                                "🎯 Forecast 2025: Stabil di ~1.1-1.5 juta/bulan"
-                            ),
-                        ]
+                            html.Li("📈 Pemulihan bertahap 2021–2023"),
+                            html.Li("🎯 Forecast 2025: Stabil di ~1.1–1.5 juta/bulan"),
+                        ],
+                        className="tsa-list",
                     ),
                 ],
-                color="light",
-                className="mt-3",
+                color="dark",              # jangan 'light' lagi
+                className="mt-3 tsa-box",  # tambahin class custom
             ),
+
         ]
     )
 

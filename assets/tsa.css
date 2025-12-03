@@ -1,0 +1,28 @@
+/* Box utama interpretasi TSA */
+.tsa-box {
+    background: #0f172a !important;           /* donker */
+    border: 1px solid #1e293b !important;
+    color: #f1f5f9 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Judul interpretasi */
+.tsa-title {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #e2e8f0 !important;
+    margin-bottom: 8px !important;
+}
+
+/* Isi bullet list */
+.tsa-list li {
+    color: #cbd5e1 !important;
+    font-size: 14px !important;
+    margin-bottom: 4px;
+}
+
+/* Biar bullet / emoji tetap keliatan hidup */
+.tsa-list li::marker {
+    color: #38bdf8 !important;
+}

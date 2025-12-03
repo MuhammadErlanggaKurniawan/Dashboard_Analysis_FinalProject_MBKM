@@ -1180,12 +1180,6 @@ def create_regional_analysis(df, variable):
 
 
 def create_insights_cards(df, selected_periode):
-    """
-    Insight 1  : pakai get_statistical_insights (misal korelasi terkuat, dll.)
-    Insight 2  : kenaikan & penurunan terbesar jumlah_koperasi_aktif
-                 (periode sekarang vs periode sebelumnya).
-    Insight 3  : pakai insight lain dari get_statistical_insights (kalau ada).
-    """
     base_insights = get_statistical_insights(df) or []
 
     # fallback kalau utils belum ngasih apa-apa

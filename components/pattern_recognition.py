@@ -1,13 +1,13 @@
 # components/pattern_recognition.py
 
-from dash import html, dcc, callback, Input, Output
-import dash_bootstrap_components as dbc
-import dash_leaflet as dl
+from dash import html, dcc, callback, Input, Output # type: ignore
+import dash_bootstrap_components as dbc # type: ignore
+import dash_leaflet as dl # type: ignore
 import plotly.graph_objects as go
 import pandas as pd
-from shapely import wkt
-from shapely.geometry import mapping
-from dash_extensions.javascript import assign
+from shapely import wkt # type: ignore
+from shapely.geometry import mapping # type: ignore
+from dash_extensions.javascript import assign # type: ignore
 
 from utils.pattern_data import (
     load_geo_table_and_geojson,
@@ -23,6 +23,9 @@ from utils.pattern_data import (
 # ============================
 
 _geo_df = load_geo_table_and_geojson()
+_geo_df["Cluster"] = _geo_df["Cluster"].astype(int)
+print("[DEBUG] Columns in _geo_df:", _geo_df.columns.tolist())
+print("[DEBUG] Cluster value counts:\n", _geo_df["Cluster"].value_counts(dropna=False))
 _radar_source = build_radar_source()
 _sil_source = build_silhouette_source()
 
@@ -30,6 +33,10 @@ _sil_source = build_silhouette_source()
 # ============================
 # 2. Konversi WKT → GeoJSON
 # ============================
+CLUSTER_COLORS = {
+    0: "#f97316",  # orange – Mikro-Intensif
+    1: "#6366f1",  # indigo – Struktural-Besar
+}
 
 def prepare_all_geojson_data():
     """
@@ -70,14 +77,25 @@ def prepare_all_geojson_data():
                 "kabkot": row.get("kabkot", ""),
                 "cluster": cl_int,
                 "cluster_label": CLUSTER_LABELS.get(cl_int, f"Cluster {cl_int}"),
+                # langsung tempel warna di properties
+                "fillColor": CLUSTER_COLORS.get(cl_int, "#9ca3af"),
             },
             "geometry": geom_geojson,
         }
         features.append(feature)
 
+    # DEBUG: cek satu contoh fitur, setelah features terisi
+    if features:
+        print(
+            "[DEBUG] example cluster:",
+            features[0]["properties"]["cluster"],
+            type(features[0]["properties"]["cluster"]),
+        )
+
     fc = {"type": "FeatureCollection", "features": features}
     print(f"[DEBUG] GeoJSON FeatureCollection built: {len(features)} features")
     return fc
+
 
 
 _all_geojson_data = prepare_all_geojson_data()
@@ -87,23 +105,30 @@ _all_geojson_data = prepare_all_geojson_data()
 # 3. JavaScript style & tooltip
 # ============================
 
-# warna cluster
+# warna cluster (SATU-SATUNYA sumber kebenaran warna)
+# warna cluster (SATU-SATUNYA sumber kebenaran warna)
 CLUSTER_COLORS = {
-    0: "#1f77b4",  # biru
-    1: "#ff7f0e",  # oranye
+    0: "#f97316",  # orange – Mikro-Intensif
+    1: "#6366f1",  # indigo – Struktural-Besar
 }
 
-# fungsi JS untuk style poligon
+
+def _build_colors_js():
+    pairs = []
+    for cid, col in CLUSTER_COLORS.items():
+        pairs.append(f"{cid}: '{col}'")     # numeric
+        pairs.append(f"'{cid}': '{col}'")  # string
+    return "{%s}" % ", ".join(pairs)
+
+
 geojson_style = assign(
     """
 function(feature, context){
-    const cl = feature.properties.cluster;
-    const colors = {0: '#1f77b4', 1: '#ff7f0e'};
     return {
-        color: '#ffffff',
+        color: '#0f172a',
         weight: 1,
-        fillColor: colors[cl] || '#808080',
-        fillOpacity: 0.7
+        fillColor: feature.properties.fillColor || '#9ca3af',
+        fillOpacity: 0.8
     };
 }
 """
@@ -115,8 +140,8 @@ hover_style = assign(
 function(feature, context){
     return {
         weight: 3,
-        color: '#000000',
-        fillOpacity: 0.9
+        color: '#e5e7eb',
+        fillOpacity: 0.95
     };
 }
 """
@@ -132,7 +157,6 @@ function(feature, layer, context){
 }
 """
 )
-
 
 # ============================
 # 4. Layout
@@ -233,38 +257,49 @@ def create_pattern_layout():
                                 [
                                     html.Div(
                                         [
+                                            # kotak warna cluster 0
                                             html.Span(
-                                                "■",
                                                 style={
-                                                    "color": CLUSTER_COLORS[0],
-                                                    "fontSize": "20px",
-                                                },
+                                                    "display": "inline-block",
+                                                    "width": "14px",
+                                                    "height": "14px",
+                                                    "borderRadius": "3px",
+                                                    "backgroundColor": CLUSTER_COLORS[0],
+                                                    "border": "1px solid #e5e7eb",
+                                                    "marginRight": "8px",
+                                                }
                                             ),
                                             html.Span(
-                                                f" {CLUSTER_LABELS[0]}",
-                                                className="ms-2",
+                                                CLUSTER_LABELS[0],
+                                                style={"color": "#e5e7eb"},
                                             ),
                                         ],
-                                        className="mb-1",
+                                        className="mb-2",
                                     ),
                                     html.Div(
                                         [
+                                            # kotak warna cluster 1
                                             html.Span(
-                                                "■",
                                                 style={
-                                                    "color": CLUSTER_COLORS[1],
-                                                    "fontSize": "20px",
-                                                },
+                                                    "display": "inline-block",
+                                                    "width": "14px",
+                                                    "height": "14px",
+                                                    "borderRadius": "3px",
+                                                    "backgroundColor": CLUSTER_COLORS[1],
+                                                    "border": "1px solid #e5e7eb",
+                                                    "marginRight": "8px",
+                                                }
                                             ),
                                             html.Span(
-                                                f" {CLUSTER_LABELS[1]}",
-                                                className="ms-2",
+                                                CLUSTER_LABELS[1],
+                                                style={"color": "#e5e7eb"},
                                             ),
                                         ],
-                                        className="mb-1",
+                                        className="mb-2",
                                     ),
                                 ]
                             ),
+
                         ],
                         md=4,
                     ),
@@ -342,6 +377,7 @@ def update_pattern_radar(_cluster_value):
     for cl in sorted(df["Cluster"].unique()):
         sub = df[df["Cluster"] == cl].set_index("feature")["value"]
         values = [sub[f] for f in RADAR_FEATURES] + [sub[RADAR_FEATURES[0]]]
+        color = CLUSTER_COLORS.get(int(cl), "#9ca3af")
 
         fig.add_trace(
             go.Scatterpolar(
@@ -349,16 +385,39 @@ def update_pattern_radar(_cluster_value):
                 theta=categories,
                 fill="toself",
                 name=CLUSTER_LABELS.get(int(cl), f"Cluster {int(cl)}"),
+                line=dict(color=color, width=2),
+                fillcolor=color,   # pakai hex biasa
+                opacity=0.6,       # transparansi diatur di sini
             )
         )
 
     fig.update_layout(
         polar=dict(
-            radialaxis=dict(visible=True, range=[0, 1]),
+            bgcolor="#020617",
+            radialaxis=dict(
+                visible=True,
+                range=[0, 1],
+                gridcolor="#1e293b",
+                linecolor="#475569",
+                tickfont=dict(color="#e5e7eb"),
+            ),
+            angularaxis=dict(
+                gridcolor="#1e293b",
+                tickfont=dict(color="#e5e7eb"),
+            ),
         ),
+        paper_bgcolor="#020617",
+        plot_bgcolor="#020617",
+        font=dict(color="#e5e7eb"),
         showlegend=True,
+        legend=dict(
+            bgcolor="rgba(15,23,42,0.8)",
+            bordercolor="#1e293b",
+            borderwidth=1,
+        ),
         margin=dict(l=20, r=20, t=20, b=20),
     )
+
     return fig
 
 
@@ -386,17 +445,35 @@ def update_pattern_silhouette(cluster_value):
         return fig
 
     df = df.sort_values("Silhouette", ascending=True)
+    colors = [
+        CLUSTER_COLORS.get(int(c), "#64748b") 
+        for c in df["Cluster"]
+    ]
 
     fig = go.Figure(
         go.Bar(
             x=df["Silhouette"],
             y=df["KABKOT"],
             orientation="h",
+            marker=dict(color=colors),
         )
     )
+
     fig.update_layout(
         xaxis_title="Nilai Silhouette",
         yaxis_title="Kabupaten/Kota",
         margin=dict(l=10, r=10, t=20, b=20),
+        paper_bgcolor="#020617",
+        plot_bgcolor="#020617",
+        font=dict(color="#e5e7eb"),
+        xaxis=dict(
+            gridcolor="#1e293b",
+            linecolor="#475569",
+        ),
+        yaxis=dict(
+            gridcolor="#1e293b",
+            linecolor="#475569",
+        ),
     )
+
     return fig
