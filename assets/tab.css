@@ -1,0 +1,46 @@
+/* ==========================================
+   DASH TABS DARK MODE – BEAUTIFY NAVIGATION
+   ========================================== */
+
+.custom-tabs {
+    background: #0f172a !important; /* dark navy */
+    border: none !important;
+    padding: 5px 0;
+    border-radius: 12px;
+}
+
+/* Tab item default */
+.custom-tabs .tab {
+    background: transparent !important;
+    border: none !important;
+    color: #94a3b8 !important;        /* text abu terang */
+    font-weight: 500;
+    padding: 12px 24px !important;
+    margin: 0 8px !important;
+    border-radius: 10px !important;
+    transition: all 0.2s ease;
+}
+
+/* Hover effect */
+.custom-tabs .tab:hover {
+    background: #1e293b !important;
+    color: #e2e8f0 !important;
+    box-shadow: 0 0 10px rgba(59,130,246,0.3);
+}
+
+/* Tab aktif */
+.custom-tabs .tab--selected {
+    background: linear-gradient(90deg, #2563eb, #3b82f6) !important;
+    color: #f8fafc !important;
+    font-weight: 600;
+    box-shadow: 0 0 15px rgba(37,99,235,0.45);
+    border-radius: 10px !important;
+}
+
+/* Icon di dalam tab */
+.custom-tabs .tab i,
+.custom-tabs .tab svg {
+    margin-right: 6px;
+    fill: currentColor !important;
+    color: inherit !important;
+}

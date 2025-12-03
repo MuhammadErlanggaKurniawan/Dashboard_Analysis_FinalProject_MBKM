@@ -20,6 +20,20 @@ from utils.cooperative_processor import (
     NUMERIC_COLS,
 )
 
+VAR_NAME_MAP = {
+    "total_penduduk": "Total Penduduk",
+    "jumlah_koperasi_aktif": "Jumlah Koperasi Aktif",
+    "jumlah_koperasi_tidak_aktif": "Koperasi Tidak Aktif",
+    "jumlah_koperasi_total": "Total Koperasi",
+    "jumlah_karyawan": "Jumlah Karyawan",
+    "jumlah_manager": "Jumlah Manajer",
+    "usaha_besar": "Usaha Besar",
+    "usaha_kecil": "Usaha Kecil",
+    "usaha_menengah": "Usaha Menengah",
+    "usaha_mikro": "Usaha Mikro",
+}
+
+
 # ==========================================
 # 0. GLOBAL DATA
 # ==========================================
@@ -563,7 +577,7 @@ def update_analysis(
     )
     top_regions_table = generate_top_regions_table(df_processed, selected_variable)
     regional_fig = create_regional_analysis(df_processed, selected_variable)
-    insights_cards = create_insights_cards(df_processed)
+    insights_cards = create_insights_cards(df_processed, selected_periode)
     dataset_info = create_dataset_info(df_processed)
 
     corr_interpretation = strongest_text  # teks di bawah heatmap
@@ -1165,38 +1179,172 @@ def create_regional_analysis(df, variable):
     return fig
 
 
-def create_insights_cards(df):
-    insights = get_statistical_insights(df)
+def create_insights_cards(df, selected_periode):
+    """
+    Insight 1  : pakai get_statistical_insights (misal korelasi terkuat, dll.)
+    Insight 2  : kenaikan & penurunan terbesar jumlah_koperasi_aktif
+                 (periode sekarang vs periode sebelumnya).
+    Insight 3  : pakai insight lain dari get_statistical_insights (kalau ada).
+    """
+    base_insights = get_statistical_insights(df) or []
 
-    if not insights:
-        insights = [
-            "📊 Data sedang dianalisis...",
-            "🔍 Gunakan filter untuk melihat insights spesifik",
-            "💡 Pilih variabel dan metode statistik yang berbeda",
-        ]
+    # fallback kalau utils belum ngasih apa-apa
+    while len(base_insights) < 3:
+        base_insights.append("📊 Data sedang dianalisis...")
 
-    colors = ["primary", "success", "warning"]
     cards = []
-    for i, insight in enumerate(insights[:3]):
-        cards.append(
-            html.Div(
-                [
-                    html.Div(
-                        [
-                            html.H6(
-                                f"Insight {i + 1}", className="card-title"
-                            ),
-                            html.P(insight, className="card-text"),
-                        ],
-                        className="card-body",
-                    )
-                ],
-                className=f"card text-white bg-{colors[i]} mb-3",
-            )
+
+    # ========= Insight 1 (tetap) =========
+    cards.append(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.H6("Insight 1", className="card-title"),
+                        html.P(base_insights[0], className="card-text"),
+                    ],
+                    className="card-body",
+                )
+            ],
+            className="card text-white bg-primary mb-3",
         )
+    )
+
+    # ========= Insight 2 (perubahan ekstrem) =========
+    cards.append(create_change_extreme_insight_card(selected_periode))
+
+    # ========= Insight 3 (tetap dari utils) =========
+    cards.append(
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.H6("Insight 3", className="card-title"),
+                        html.P(base_insights[2], className="card-text"),
+                    ],
+                    className="card-body",
+                )
+            ],
+            className="card text-white bg-warning mb-3",
+        )
+    )
 
     return cards
 
+def create_change_extreme_insight_card(selected_periode: str | None):
+    """
+    Insight 2: cari kenaikan & penurunan terbesar jumlah_koperasi_aktif
+    antar-periode (periode sekarang vs periode sebelumnya) di seluruh
+    kabupaten/kota.
+    """
+    title = "Insight 2"
+
+    # Safety kalau periode gak valid / gak ada periode sebelumnya
+    if (
+        selected_periode is None
+        or "periode_update" not in _df_processed_global.columns
+    ):
+        body = html.P(
+            "Perubahan antar-periode tidak dapat dihitung karena periode tidak valid.",
+            className="card-text",
+        )
+    else:
+        df_all = _df_processed_global.copy()
+        periods = sorted(df_all["periode_update"].unique().tolist())
+
+        if selected_periode not in periods:
+            body = html.P(
+                "Periode terpilih tidak ditemukan dalam data.",
+                className="card-text",
+            )
+        else:
+            idx = periods.index(selected_periode)
+            if idx == 0:
+                body = html.P(
+                    "Belum ada periode sebelumnya untuk dibandingkan "
+                    f"(periode pertama: {selected_periode}).",
+                    className="card-text",
+                )
+            else:
+                prev_periode = periods[idx - 1]
+
+                cur = df_all[df_all["periode_update"] == selected_periode][
+                    ["kabupaten_kota", "jumlah_koperasi_aktif"]
+                ]
+                prev = df_all[df_all["periode_update"] == prev_periode][
+                    ["kabupaten_kota", "jumlah_koperasi_aktif"]
+                ]
+
+                merged = cur.merge(
+                    prev,
+                    on="kabupaten_kota",
+                    how="inner",
+                    suffixes=("_cur", "_prev"),
+                )
+
+                merged["delta"] = (
+                    merged["jumlah_koperasi_aktif_cur"]
+                    - merged["jumlah_koperasi_aktif_prev"]
+                )
+
+                if merged.empty or merged["delta"].abs().sum() == 0:
+                    body = html.P(
+                        f"Perubahan jumlah koperasi aktif antara {prev_periode} "
+                        f"dan {selected_periode} relatif kecil / stabil.",
+                        className="card-text",
+                    )
+                else:
+                    inc_row = merged.loc[merged["delta"].idxmax()]
+                    dec_row = merged.loc[merged["delta"].idxmin()]
+
+                    inc_delta = int(inc_row["delta"])
+                    dec_delta = int(dec_row["delta"])
+
+                    inc_text = (
+                        f"Kenaikan terbesar: {inc_row['kabupaten_kota']} "
+                        f"(+{inc_delta:,} koperasi aktif)."
+                    )
+
+                    if dec_delta < 0:
+                        dec_text = (
+                            f"Penurunan terbesar: {dec_row['kabupaten_kota']} "
+                            f"({dec_delta:,} koperasi aktif)."
+                        )
+                    else:
+                        dec_text = (
+                            "Tidak ada wilayah dengan penurunan jumlah "
+                            "koperasi aktif pada periode ini."
+                        )
+
+                    body = html.Div(
+                        [
+                            html.P(
+                                f"Perbandingan jumlah_koperasi_aktif antara "
+                                f"{prev_periode} dan {selected_periode}:",
+                                className="small mb-1",
+                            ),
+                            html.Ul(
+                                [
+                                    html.Li(inc_text),
+                                    html.Li(dec_text),
+                                ],
+                                className="mb-0",
+                            ),
+                        ]
+                    )
+
+    return html.Div(
+        [
+            html.Div(
+                [
+                    html.H6(title, className="card-title"),
+                    body,
+                ],
+                className="card-body",
+            )
+        ],
+        className="card text-white bg-success mb-3",
+    )
 
 def create_dataset_info(df):
     kota_count = (
@@ -1434,3 +1582,257 @@ def create_policy_summary(df, selected_periode, region_type, selected_variable):
         ]
     )
     
+def create_period_highlights(df, selected_periode, region_type):
+    """
+    Highlight antar-periode sederhana:
+    - Variabel dengan kenaikan persentase tertinggi
+    - Variabel dengan penurunan persentase terbesar
+    """
+    if selected_periode is None or "periode_update" not in _df_processed_global.columns:
+        return html.Div(
+            "Highlight antar-periode belum tersedia untuk kombinasi ini.",
+            className="text-muted",
+        )
+
+    if selected_periode not in PERIODE_LIST:
+        return html.Div(
+            "Periode tidak dikenali dalam data global.", className="text-muted"
+        )
+
+    idx = PERIODE_LIST.index(selected_periode)
+    if idx == 0:
+        return html.Div(
+            "Tidak ada periode sebelumnya untuk dibandingkan (ini periode paling awal).",
+            className="text-muted",
+        )
+
+    prev_periode = PERIODE_LIST[idx - 1]
+
+    # Filter global untuk current & prev
+    base = _df_processed_global.copy()
+    if region_type != "all" and "jenis_wilayah" in base.columns:
+        base = base[base["jenis_wilayah"] == region_type]
+
+    cur_df = base[base["periode_update"] == selected_periode]
+    prev_df = base[base["periode_update"] == prev_periode]
+
+    if cur_df.empty or prev_df.empty:
+        return html.Div(
+            "Data untuk periode saat ini atau sebelumnya tidak lengkap untuk highlight.",
+            className="text-muted",
+        )
+
+    deltas = []
+    for col in NUMERIC_COLS:
+        if col not in cur_df.columns or col not in prev_df.columns:
+            continue
+
+        cur_mean = cur_df[col].astype(float).mean()
+        prev_mean = prev_df[col].astype(float).mean()
+
+        if not np.isfinite(cur_mean) or not np.isfinite(prev_mean) or prev_mean == 0:
+            continue
+
+        delta_pct = (cur_mean - prev_mean) / prev_mean * 100.0
+        deltas.append(
+            {
+                "var": col,
+                "delta_pct": delta_pct,
+                "cur_mean": cur_mean,
+                "prev_mean": prev_mean,
+            }
+        )
+
+    if not deltas:
+        return html.Div(
+            "Tidak ditemukan perubahan yang dapat dihitung antar-periode.",
+            className="text-muted",
+        )
+
+    # cari naik & turun terbesar
+    inc = max(deltas, key=lambda d: d["delta_pct"])
+    dec = min(deltas, key=lambda d: d["delta_pct"])
+
+    def fmt_var(v):
+        return VAR_NAME_MAP.get(v, v.replace("_", " ").title())
+
+    periode_label = f"{prev_periode} → {selected_periode}"
+
+    items = [
+        html.Li(
+            f"Perbandingan dilakukan antara {periode_label} "
+            f"untuk {'semua wilayah' if region_type == 'all' else region_type}.",
+            className="mb-1",
+        ),
+        html.Li(
+            f"Kenaikan relatif terbesar: {fmt_var(inc['var'])} "
+            f"(≈ {inc['delta_pct']:+.1f}% dibanding periode sebelumnya).",
+            className="mb-1",
+        ),
+        html.Li(
+            f"Penurunan relatif terbesar: {fmt_var(dec['var'])} "
+            f"(≈ {dec['delta_pct']:+.1f}% dibanding periode sebelumnya).",
+            className="mb-1",
+        ),
+    ]
+
+    return html.Div(
+        [
+            html.P("Highlight antar-periode:", className="fw-bold mb-1"),
+            html.Ul(items, className="mb-0"),
+        ]
+    )
+
+def create_mini_trend_main_var(global_df, selected_variable, region_type):
+    """
+    Sparkline sederhana: rata-rata variabel utama per periode (maks 6 periode terakhir).
+    """
+    var = selected_variable or "jumlah_koperasi_aktif"
+    df = global_df.copy()
+
+    if var not in df.columns or "periode_update" not in df.columns:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Data tren tidak tersedia.",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(height=180, margin=dict(l=30, r=10, t=30, b=30))
+        return fig
+
+    if region_type != "all" and "jenis_wilayah" in df.columns:
+        df = df[df["jenis_wilayah"] == region_type]
+
+    tmp = (
+        df.groupby("periode_update")[var]
+        .mean()
+        .sort_index()
+        .reset_index()
+        .rename(columns={var: "mean_val"})
+    )
+
+    if tmp.empty:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Data tren tidak tersedia.",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(height=180, margin=dict(l=30, r=10, t=30, b=30))
+        return fig
+
+    # ambil 6 periode terakhir
+    tmp = tmp.tail(6)
+
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=tmp["periode_update"],
+            y=tmp["mean_val"],
+            mode="lines+markers",
+            line=dict(width=2),
+            marker=dict(size=6),
+            hovertemplate="Periode %{x}<br>Rata-rata ≈ %{y:.1f}<extra></extra>",
+        )
+    )
+
+    fig.update_layout(
+        title=f"Rata-rata {VAR_NAME_MAP.get(var, var)} (≤ 6 periode terakhir)",
+        height=190,
+        margin=dict(l=40, r=10, t=40, b=40),
+        xaxis_title="Periode",
+        yaxis_title="Rata-rata",
+        xaxis_tickangle=-30,
+    )
+
+    return fig
+
+def create_mini_jenis_usaha_figure(df):
+    """
+    Komposisi usaha besar/kecil/menengah/mikro di periode & filter saat ini.
+    """
+    cols_usaha = ["usaha_besar", "usaha_kecil", "usaha_menengah", "usaha_mikro"]
+    available = [c for c in cols_usaha if c in df.columns]
+
+    if not available:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Data jenis usaha tidak tersedia.",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(height=220, margin=dict(l=30, r=10, t=30, b=30))
+        return fig
+
+    agg = df[available].astype(float).sum().reset_index()
+    agg.columns = ["jenis_usaha", "jumlah"]
+
+    total = agg["jumlah"].sum()
+    if total <= 0:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="Nilai jenis usaha nol/invalid.",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            showarrow=False,
+        )
+        fig.update_layout(height=220, margin=dict(l=30, r=10, t=30, b=30))
+        return fig
+
+    agg["persen"] = agg["jumlah"] / total * 100.0
+
+    fig = px.bar(
+        agg,
+        x="jenis_usaha",
+        y="jumlah",
+        text=agg["persen"].map(lambda v: f"{v:.1f}%"),
+        title="Distribusi Jenis Usaha (total = 100%)",
+    )
+
+    fig.update_traces(
+        textposition="outside",
+        hovertemplate="%{x}<br>Jumlah: %{y:.0f}<br>Share: %{text}<extra></extra>",
+    )
+    fig.update_layout(
+        height=220,
+        margin=dict(l=40, r=10, t=40, b=40),
+        xaxis_title="Jenis usaha",
+        yaxis_title="Jumlah",
+    )
+
+    return fig
+
+def apply_dark_layout(fig):
+    fig.update_layout(
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="#020617",
+        font=dict(color="#e5e7eb"),
+        xaxis=dict(
+            gridcolor="#1f2937",
+            zerolinecolor="#1f2937",
+            tickfont=dict(color="#e5e7eb"),
+            titlefont=dict(color="#e5e7eb"),
+        ),
+        yaxis=dict(
+            gridcolor="#1f2937",
+            zerolinecolor="#1f2937",
+            tickfont=dict(color="#e5e7eb"),
+            titlefont=dict(color="#e5e7eb"),
+        ),
+        legend=dict(
+            font=dict(color="#e5e7eb"),
+        ),
+    )
+    return fig
+

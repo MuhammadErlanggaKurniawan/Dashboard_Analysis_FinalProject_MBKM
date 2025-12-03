@@ -43,7 +43,7 @@ app.layout = html.Div(
                 ),
                 html.Div(id="tabs-content", className="p-4"),
             ],
-            className="container-fluid main-container",
+            className="custom-tabs mt-2",
         ),
     ]
 )

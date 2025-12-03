@@ -1,0 +1,412 @@
+/* ===========================
+   DARK THEME — MIDNIGHT ANALYTICS
+   =========================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+:root {
+    --bg-main: #020617;          /* hampir hitam tapi masih ada biru */
+    --bg-surface: #0b1220;
+    --bg-card: #020617;
+    --bg-elevated: #020617;
+    --border-subtle: #7a90b4;
+
+    --text-main: #e5e7eb;
+    --text-muted: #9ca3af;
+
+    --accent-blue: #3b82f6;
+    --accent-cyan: #06b6d4;
+    --accent-green: #22c55e;
+    --accent-yellow: #facc15;
+    --accent-red: #f97373;
+
+    --radius-lg: 18px;
+    --radius-card: 14px;
+
+    --shadow-soft: 0 18px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* GLOBAL RESET */
+html, body {
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg-main) !important;
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: var(--text-main);
+}
+
+body {
+    /* biar ga ada warna putih aneh dari browser */
+    background-image: radial-gradient(circle at top left, #1f2937 0, #020617 45%);
+}
+
+.container-fluid {
+    background: transparent !important;
+    padding: 1.6rem 2.2rem 2.4rem 2.2rem;
+}
+
+/* Hapus garis biru focus jelek */
+:focus {
+    outline: none;
+}
+
+/* ===========================
+   HEADER / TITLE
+   =========================== */
+
+.header-section {
+    background: radial-gradient(circle at top left, #1d4ed8, #06b6d4);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-soft);
+    padding: 1.4rem 1.6rem;
+    color: #f9fafb;
+}
+
+.header-section h1 {
+    color: #f9fafb !important;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    margin-bottom: 0.4rem;
+}
+
+.header-section p {
+    margin-bottom: 0;
+    color: rgba(241, 245, 249, 0.96) !important;
+}
+
+/* Kalau lu pakai tabs di paling atas */
+.dash-tabs {
+    border: none !important;
+    margin-bottom: 0.8rem;
+    background: var(--bg-surface);
+}
+
+.dash-tabs .tab {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    padding: 0.5rem 1.4rem;
+    font-size: 0.9rem;
+    border-radius: 999px;
+}
+
+.dash-tabs .tab--selected {
+    background: #020617;
+    color: var(--accent-cyan);
+    box-shadow: 0 0 0 1px #1f2937, 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+/* ===========================
+   CARDS & PANELS
+   =========================== */
+
+.card {
+    background: var(--bg-card) !important;
+    border-radius: var(--radius-card);
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-soft);
+}
+
+.card-title {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+/* === Darker gradient untuk Insight cards === */
+.card.bg-primary {
+    background: linear-gradient(90deg, #1e40af, #2563eb) !important;  /* biru lebih dalam */
+    color: #f9fafb !important;
+}
+
+.card.bg-success {
+    background: linear-gradient(90deg, #047857, #16a34a) !important;  /* hijau lebih deep */
+    color: #f9fafb !important;
+}
+
+.card.bg-warning {
+    background: linear-gradient(90deg, #d97706, #f59e0b) !important;  /* oranye agak gelap */
+    color: #f9fafb !important;
+}
+
+/* Biar teks di dalam insight card pasti kebaca */
+.card.bg-primary * ,
+.card.bg-success * ,
+.card.bg-warning * {
+    color: #f9fafb !important;
+    text-shadow: none !important;
+}
+
+/* Filter bar (bar biru terang sebelumnya) */
+.row.mb-4.p-3.bg-light.rounded.shadow-sm {
+    background: #020617 !important;
+    border-radius: var(--radius-card) !important;
+    border: 1px solid var(--border-subtle);
+    box-shadow: var(--shadow-soft);
+}
+
+/* ===========================
+   TEXT & LABELS
+   =========================== */
+
+p {
+    color: var(--text-muted);
+}
+
+label.fw-bold,
+label.fw-bold.small {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ===========================
+   DROPDOWN & RADIO
+   =========================== */
+
+.Select-control {
+    background: #2c42a6 !important;          /* sama kayak card */
+    border-radius: 999px !important;
+    border: 1px solid #4b5563 !important;
+    color: #e5e7eb !important;
+    box-shadow: none !important;
+}
+
+/* teks di dalam dropdown */
+.Select-placeholder,
+.Select-value-label {
+    color: #e5e7eb !important;
+}
+
+/* panah di kanan */
+.Select-arrow {
+    border-top-color: #e5e7eb !important;
+}
+
+/* menu saat dibuka */
+.Select-menu-outer {
+    background: #020617 !important;
+    border: 1px solid #4b5563 !important;
+    color: #e5e7eb !important;
+}
+
+/* setiap opsi */
+.Select-option {
+    background-color: #020617 !important;
+    color: #e5e7eb !important;
+    font-size: 0.9rem;
+}
+
+/* opsi dihover */
+.Select-option.is-focused {
+    background-color: #111827 !important;
+}
+
+/* opsi terseleksi */
+.Select-option.is-selected {
+    background-color: #1d4ed8 !important;
+    color: #f9fafb !important;
+}
+
+.Select-placeholder, .Select-value-label {
+    color: var(--text-main) !important;
+}
+.Select-menu-outer {
+    background: #020617 !important;
+    border: 1px solid #1e293b !important;
+}
+
+/* radio wilayah */
+input[type="radio"] {
+    accent-color: var(--accent-cyan);
+}
+
+/* ===========================
+   TABLES (Shapiro, Top5)
+   =========================== */
+
+.dash-table-container .dash-spreadsheet {
+    background: #020617 !important;
+    border-radius: 10px;
+    border: 1px solid #1f2937 !important;
+}
+
+.dash-table-container .dash-spreadsheet td,
+.dash-table-container .dash-spreadsheet th {
+    background: #020617 !important;
+    color: var(--text-main) !important;
+    border-color: #111827 !important;
+    font-size: 0.84rem;
+}
+
+/* ===========================
+   PLOTLY GRAPHS
+   =========================== */
+
+.js-plotly-plot .plotly .main-svg {
+    border-radius: 14px;
+}
+
+/* biar area sekitar graph gelap, graph sendiri transparan nanti dari Python */
+.js-plotly-plot {
+    background-color: transparent !important;
+}
+
+/* badge korelasi terkuat */
+#correlation-interpretation {
+    border-radius: 999px;
+    padding: 0.35rem 0.9rem;
+    font-size: 0.78rem;
+    background: linear-gradient(90deg, var(--accent-cyan), var(--accent-blue));
+    color: #0f172a;
+}
+
+/* ===========================
+   RIGHT PANEL: dataset & policy
+   =========================== */
+
+.dataset-info p,
+.dataset-info li {
+    color: var(--text-muted);
+}
+
+#policy-summary {
+    max-height: 280px;
+    overflow-y: auto;
+}
+#policy-summary li {
+    margin-bottom: 3px;
+}
+
+/* scrollbar halus */
+#policy-summary::-webkit-scrollbar {
+    width: 6px;
+}
+#policy-summary::-webkit-scrollbar-thumb {
+    background: #1f2937;
+    border-radius: 999px;
+}
+
+/* ===========================
+   RESPONSIVE
+   =========================== */
+
+@media (max-width: 991px) {
+    .container-fluid {
+        padding: 1rem;
+    }
+    .header-section {
+        border-radius: 14px;
+    }
+    .card {
+        border-radius: 12px;
+    }
+}
+
+/* ====================================
+   FIX: TEXT COLORS ON DARK BACKGROUND
+   ==================================== */
+
+/* Semua teks default jadi terang */
+body,
+h1, h2, h3, h4, h5, h6,
+p, span, label,
+li, a,
+.dataset-info,
+#policy-summary,
+#period-highlights {
+    color: var(--text-main) !important;
+}
+
+/* Versi muted (buat keterangan halus) */
+.text-muted,
+.dataset-info p,
+.dataset-info li,
+#policy-summary small,
+#policy-summary .small {
+    color: var(--text-muted) !important;
+}
+
+/* Biar card ga balik ke teks hitam */
+.card * {
+    color: var(--text-main);
+}
+
+/* Insight cards warna-warni tetap putih */
+.card.text-white.bg-primary *,
+.card.text-white.bg-success *,
+.card.text-white.bg-warning * {
+    color: #f9fafb !important;
+}
+
+/* ===========================
+   TEXT VISIBILITY FIX
+   =========================== */
+
+/* semua teks dalam card dijamin terang */
+.card p,
+.card li,
+.card span,
+.card td,
+.card th,
+.card strong,
+.card b {
+    color: var(--text-main) !important;
+}
+
+/* text-muted jangan terlalu redup di dark mode */
+.text-muted,
+.card .text-muted,
+small,
+.card small {
+    color: #cbd5f5 !important;   /* lebih terang dari sebelumnya */
+}
+
+/* khusus panel "Info Dataset" & "Kesimpulan" supaya full kebaca */
+#dataset-info * ,
+#coop-trend-summary-text * {
+    color: var(--text-main) !important;
+
+}
+/* ====================================
+   TOP 5 WILAYAH & DATA TABLE STYLING
+   ==================================== */
+
+/* Semua DataTable: bikin panelnya sedikit lebih terang */
+.dash-table-container .dash-spreadsheet {
+    background: #0729c3 !important;             /* dasar gelap */
+    border: 1px solid #4b5563 !important;       /* border lebih terang */
+    border-radius: 10px !important;
+    color: #e5e7eb !important;
+}
+
+/* Header kolom */
+.dash-table-container .dash-spreadsheet th {
+    background-color: #001a8d !important;
+    color: #e5e7eb !important;
+    font-weight: 600 !important;
+    border-bottom: 1px solid #4b5563 !important;
+}
+
+/* Sel data */
+.dash-table-container .dash-spreadsheet td {
+    background-color: #6177d7 !important;
+    color: #e5e7eb !important;
+    border-color: #111827 !important;
+    font-size: 0.88rem;
+}
+
+/* Alternating row biar lebih kebaca */
+.dash-table-container .dash-spreadsheet tbody tr:nth-child(even) td {
+    background-color: #708ed3 !important;
+}
+
+/* Hover row efek */
+.dash-table-container .dash-spreadsheet tbody tr:hover td {
+    background-color: #0b1220 !important;
+}
+
+/* Khusus card Top 5 Wilayah: bikin border lebih jelas dari card-nya */
+#top-regions-table .dash-spreadsheet {
+    border-color: #6b7280 !important;
+}
