@@ -112,6 +112,19 @@ CLUSTER_COLORS = {
     1: "#6366f1",  # indigo – Struktural-Besar
 }
 
+# ============================
+# 3a. Style card interpretasi
+# ============================
+
+INTERPRET_CARD_STYLE = {
+    "backgroundColor": "#020617",
+    "border": "1px solid #1f2937",
+    "borderRadius": "16px",
+    "padding": "16px",
+    "color": "#e5e7eb",
+    "boxShadow": "0 12px 30px rgba(15,23,42,0.7)",
+}
+
 
 def _build_colors_js():
     pairs = []
@@ -176,9 +189,9 @@ def create_pattern_layout():
 
     overall_sil = compute_overall_silhouette()
     if overall_sil == overall_sil:  # bukan NaN
-        sil_text = f"Rata-rata silhouette seluruh cluster: {overall_sil:.3f}"
+        sil_value = f"{overall_sil:.3f}"
     else:
-        sil_text = "Rata-rata silhouette seluruh cluster: -"
+        sil_value = "-"
 
     return html.Div(
         [
@@ -240,24 +253,43 @@ def create_pattern_layout():
                     ),
                     dbc.Col(
                         [
-                            html.H4("Ringkasan Silhouette Score"),
+                            html.H4("Ringkasan Klaster Koperasi"),
                             html.P(
-                                sil_text,
+                                f"Skor silhouette ≈ {sil_value} (rentang 0–1). "
+                                "Angka ini menunjukkan bahwa pemisahan dua cluster sudah cukup jelas – "
+                                "kabupaten/kota di dalam satu cluster cenderung punya pola koperasi yang mirip.",
                                 id="pattern-silhouette-summary",
-                                className="lead fw-semibold",
+                                className="mb-2",
                             ),
-                            html.P(
-                                "Semakin tinggi nilai silhouette (mendekati 1), "
-                                "semakin jelas pemisahan antar cluster. "
-                                "Nilai mendekati 0 artinya batas cluster kurang tegas.",
-                                className="text-muted",
+
+                            html.H5("Bagaimana membaca cluster ini?", className="mt-3"),
+                            html.Ul(
+                                [
+                                    html.Li(
+                                        "🟠 Cluster 0 – Mikro-Intensif: jumlah koperasi aktif relatif banyak, "
+                                        "didominasi koperasi skala mikro. SDM manajerial per koperasi cenderung "
+                                        "lebih tipis, sehingga butuh penguatan pendampingan & tata kelola."
+                                    ),
+                                    html.Li(
+                                        "🟣 Cluster 1 – Struktural-Besar: jumlah koperasi lebih sedikit, "
+                                        "tapi proporsi koperasi menengah–besar dan SDM manajerial per koperasi "
+                                        "lebih tinggi. Fokus kebijakannya bisa ke ekspansi pasar dan penguatan "
+                                        "jejaring usaha, bukan sekadar penambahan jumlah koperasi."
+                                    ),
+                                    html.Li(
+                                        "📍 Peta di sebelah kiri membantu melihat: kabupaten/kota mana saja yang "
+                                        "masuk tiap cluster, sehingga program bisa lebih terarah (misalnya prioritas "
+                                        "intervensi di wilayah Mikro-Intensif terlebih dulu)."
+                                    ),
+                                ],
+                                className="ts-list",
                             ),
-                            html.H5("Legenda Cluster:", className="mt-3"),
+
+                            html.H5("Legenda Cluster:", className="mt-4"),
                             html.Div(
                                 [
                                     html.Div(
                                         [
-                                            # kotak warna cluster 0
                                             html.Span(
                                                 style={
                                                     "display": "inline-block",
@@ -278,7 +310,6 @@ def create_pattern_layout():
                                     ),
                                     html.Div(
                                         [
-                                            # kotak warna cluster 1
                                             html.Span(
                                                 style={
                                                     "display": "inline-block",
@@ -299,7 +330,6 @@ def create_pattern_layout():
                                     ),
                                 ]
                             ),
-
                         ],
                         md=4,
                     ),
@@ -307,8 +337,12 @@ def create_pattern_layout():
                 className="mb-4",
             ),
             # Radar + silhouette per kab/kota
+                        # Radar + silhouette per kab/kota
             dbc.Row(
                 [
+                    # =========================
+                    # KOLUM 1 — RADAR CHART
+                    # =========================
                     dbc.Col(
                         [
                             html.H4("Profil Rata-Rata Tiap Cluster (Radar Chart)"),
@@ -316,15 +350,130 @@ def create_pattern_layout():
                                 id="pattern-radar",
                                 style={"height": "420px"},
                             ),
+                            # Card interpretasi radar
+                            dbc.Card(
+                                [
+                                    html.H5(
+                                        "Interpretasi Profil Cluster",
+                                        className="mb-2",
+                                    ),
+                                    html.P(
+                                        "Radar chart ini memperlihatkan pola umum karakteristik koperasi "
+                                        "untuk dua cluster yang terbentuk.",
+                                        className="mb-2",
+                                    ),
+                                    html.H6("🔶 Cluster 0 – Mikro-Intensif", className="mt-2"),
+                                    html.Ul(
+                                        [
+                                            html.Li(
+                                                "Proporsi koperasi mikro sangat tinggi; "
+                                                "koperasi menengah–besar relatif sedikit."
+                                            ),
+                                            html.Li(
+                                                "Active ratio dan jumlah koperasi aktif per 10.000 penduduk "
+                                                "cenderung moderat."
+                                            ),
+                                            html.Li(
+                                                "SDM manajerial dan karyawan per koperasi aktif lebih rendah "
+                                                "→ butuh penguatan kapasitas dan pendampingan."
+                                            ),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                    html.P(
+                                        "Cluster ini cocok dibaca sebagai wilayah dengan ekosistem UMKM yang padat, "
+                                        "namun kelembagaan koperasinya masih berkembang. Fokus intervensi: "
+                                        "pelatihan manajemen, digitalisasi, dan penguatan akses pasar.",
+                                        className="mb-3",
+                                    ),
+                                    html.H6("🔷 Cluster 1 – Struktural-Besar"),
+                                    html.Ul(
+                                        [
+                                            html.Li(
+                                                "Proporsi koperasi menengah–besar lebih tinggi, "
+                                                "struktur usaha lebih mapan."
+                                            ),
+                                            html.Li(
+                                                "Active ratio dan indikator SDM (manajer/karyawan per koperasi aktif) "
+                                                "lebih tinggi."
+                                            ),
+                                            html.Li(
+                                                "Koperasi di cluster ini cenderung lebih siap untuk ekspansi dan "
+                                                "integrasi ke rantai pasok yang lebih luas."
+                                            ),
+                                        ],
+                                        className="mb-2",
+                                    ),
+                                    html.P(
+                                        "Cluster ini mencerminkan wilayah dengan koperasi yang sudah relatif matang. "
+                                        "Fokus intervensi: penguatan jejaring, inovasi produk/jasa, dan perluasan pasar.",
+                                        className="mb-0",
+                                    ),
+                                ],
+                                body=True,
+                                style=INTERPRET_CARD_STYLE,
+                                className="mt-3",
+                            ),
                         ],
                         md=6,
                     ),
+
+                    # =========================
+                    # KOLUM 2 — SILHOUETTE
+                    # =========================
                     dbc.Col(
                         [
                             html.H4("Silhouette per Kabupaten/Kota"),
                             dcc.Graph(
                                 id="pattern-silhouette",
                                 style={"height": "420px"},
+                            ),
+                            # Card interpretasi silhouette
+                            dbc.Card(
+                                [
+                                    html.H5(
+                                        "Interpretasi Nilai Silhouette per Wilayah",
+                                        className="mb-2",
+                                    ),
+                                    html.P(
+                                        "Grafik ini menunjukkan seberapa 'cocok' pola koperasi setiap kabupaten/kota "
+                                        "dengan cluster tempatnya berada (rentang 0–1).",
+                                        className="mb-2",
+                                    ),
+                                    html.H6("📌 Nilai tinggi (≈ 0.55 ke atas)"),
+                                    html.P(
+                                        "Wilayah seperti Sumenep, Situbondo, dan beberapa kabupaten lain memiliki "
+                                        "nilai silhouette tinggi. Artinya pola koperasi mereka sangat konsisten "
+                                        "dengan karakter cluster-nya → mudah ditarget dengan strategi kebijakan "
+                                        "yang spesifik.",
+                                        className="mb-2",
+                                    ),
+                                    html.H6("📌 Nilai menengah (sekitar 0.30–0.55)"),
+                                    html.P(
+                                        "Mayoritas wilayah berada di zona ini. Mereka masih cukup jelas masuk ke salah "
+                                        "satu cluster, tetapi memiliki kemiripan tertentu dengan cluster lain. "
+                                        "Pendekatan kebijakannya bisa lebih fleksibel, misalnya kombinasi penguatan "
+                                        "koperasi mikro dan menengah–besar.",
+                                        className="mb-2",
+                                    ),
+                                    html.H6("📌 Nilai rendah (< 0.25)"),
+                                    html.P(
+                                        "Wilayah dengan nilai rendah cenderung punya struktur koperasi yang campuran "
+                                        "atau transisi. Karakteristiknya tidak sepenuhnya cocok dengan satu cluster "
+                                        "saja. Untuk daerah seperti ini, analisis lanjutan dan diagnosis lokal penting "
+                                        "agar intervensi tidak 'satu resep untuk semua'.",
+                                        className="mb-2",
+                                    ),
+                                    html.P(
+                                        "Secara keseluruhan, grafik ini membantu mengidentifikasi: "
+                                        "(1) daerah yang sangat khas sesuai tipologi cluster, dan "
+                                        "(2) daerah borderline yang perlu perhatian khusus dalam perumusan program.",
+                                        className="mb-0",
+                                    ),
+                                ],
+                                body=True,
+                                style=INTERPRET_CARD_STYLE,
+                                className="mt-3",
                             ),
                         ],
                         md=6,

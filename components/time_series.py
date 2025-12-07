@@ -75,10 +75,12 @@ def create_tsa_tab():
                     ),
                     html.Ul(
                         [
-                            html.Li("🚀 Puncak 2.5 juta penumpang (Des 2019)"),
-                            html.Li("💥 Dampak COVID: Turun 98% (Mei 2020)"),
-                            html.Li("📈 Pemulihan bertahap 2021–2023"),
-                            html.Li("🎯 Forecast 2025: Stabil di ~1.1–1.5 juta/bulan"),
+                            html.Li("📈 Puncak tertinggi pada Januari 2020 (pra-pandemi, momen liburan akhir tahun → awal tahun)"),
+                            html.Li("💥 Dampak COVID: Penurunan ekstrem ~98% pada Mei 2020 akibat PSBB dan pembatasan perjalanan"),
+                            html.Li("📊 2021–2023: Pemulihan bertahap, tapi belum kembali ke level pra-pandemi (perubahan pola mobilitas)"),
+                            html.Li("🧭 Pola musiman kuat: Des–Jan tinggi, Mei–Agus cenderung rendah"),
+                            html.Li("📉 Era ‘new normal’: jumlah penumpang pascapandemi stabil pada level baru yang lebih rendah"),
+                            html.Li("🎯 Forecast 2025: Stabil di kisaran ~1.1–1.5 juta penumpang per bulan tanpa lonjakan besar"),
                         ],
                         className="tsa-list",
                     ),
