@@ -9,3 +9,4 @@ pmdarima
 dash_leaflet
 shapely
 dash_extensions
+gunicorn
