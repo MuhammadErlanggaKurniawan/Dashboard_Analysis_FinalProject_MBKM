@@ -10,3 +10,4 @@ dash_leaflet
 shapely
 dash_extensions
 gunicorn
+dash-bootstrap-components
